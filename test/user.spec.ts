@@ -161,4 +161,76 @@ describe('UserController', () => {
       expect(resBody.data?.name).toBe('test');
     });
   });
+
+  describe('PATCH /api/users/current', () => {
+    beforeEach(async () => {
+      await testService.deleteUser();
+      await testService.createUser();
+    });
+
+    it('should be rejected if request is invalid', async () => {
+      const response = await request(app.getHttpServer())
+        .patch('/api/users/current')
+        .set('Authorization', 'test')
+        .send({
+          password: '',
+          name: '',
+        });
+
+      const resBody = response.body as WebResponse<UserResponse>;
+
+      logger.info(resBody);
+
+      expect(response.status).toBe(400);
+      expect(resBody.errors).toBeDefined();
+    });
+
+    it('should be able update name', async () => {
+      const response = await request(app.getHttpServer())
+        .patch('/api/users/current')
+        .set('Authorization', 'test')
+        .send({
+          name: 'test updated',
+        });
+
+      const resBody = response.body as WebResponse<UserResponse>;
+
+      logger.info(resBody);
+
+      expect(response.status).toBe(200);
+      expect(resBody.data?.username).toBe('test');
+      expect(resBody.data?.name).toBe('test updated');
+    });
+
+    it('should be able update password', async () => {
+      let response = await request(app.getHttpServer())
+        .patch('/api/users/current')
+        .set('Authorization', 'test')
+        .send({
+          password: 'updated',
+        });
+
+      let resBody = response.body as WebResponse<UserResponse>;
+
+      logger.info(resBody);
+
+      expect(response.status).toBe(200);
+      expect(resBody.data?.username).toBe('test');
+      expect(resBody.data?.name).toBe('test');
+
+      response = await request(app.getHttpServer())
+        .post('/api/users/login')
+        .send({
+          username: 'test',
+          password: 'updated',
+        });
+
+      resBody = response.body as WebResponse<UserResponse>;
+
+      logger.info(resBody);
+
+      expect(response.status).toBe(200);
+      expect(resBody.data?.token).toBeDefined();
+    });
+  });
 });
