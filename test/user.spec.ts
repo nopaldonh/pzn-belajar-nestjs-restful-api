@@ -233,4 +233,40 @@ describe('UserController', () => {
       expect(resBody.data?.token).toBeDefined();
     });
   });
+
+  describe('DELETE /api/users/current', () => {
+    beforeEach(async () => {
+      await testService.deleteUser();
+      await testService.createUser();
+    });
+
+    it('should be rejected if token is invalid', async () => {
+      const response = await request(app.getHttpServer())
+        .delete('/api/users/current')
+        .set('Authorization', 'wrong');
+
+      const resBody = response.body as WebResponse<UserResponse>;
+
+      logger.info(resBody);
+
+      expect(response.status).toBe(401);
+      expect(resBody.errors).toBeDefined();
+    });
+
+    it('should be able to logout user', async () => {
+      const response = await request(app.getHttpServer())
+        .delete('/api/users/current')
+        .set('Authorization', 'test');
+
+      const resBody = response.body as WebResponse<UserResponse>;
+
+      logger.info(resBody);
+
+      expect(response.status).toBe(200);
+      expect(resBody.data).toBe(true);
+
+      const user = await testService.getUser();
+      expect(user?.token).toBeNull();
+    });
+  });
 });
