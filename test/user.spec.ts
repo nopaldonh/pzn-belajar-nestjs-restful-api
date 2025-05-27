@@ -86,4 +86,45 @@ describe('UserController', () => {
       expect(resBody.errors).toBeDefined();
     });
   });
+
+  describe('POST /api/users/login', () => {
+    beforeEach(async () => {
+      await testService.deleteUser();
+      await testService.createUser();
+    });
+
+    it('should be rejected if request is invalid', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/api/users/login')
+        .send({
+          username: '',
+          password: '',
+        });
+
+      const resBody = response.body as WebResponse<UserResponse>;
+
+      logger.info(resBody);
+
+      expect(response.status).toBe(400);
+      expect(resBody.errors).toBeDefined();
+    });
+
+    it('should be able to login', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/api/users/login')
+        .send({
+          username: 'test',
+          password: 'test',
+        });
+
+      const resBody = response.body as WebResponse<UserResponse>;
+
+      logger.info(resBody);
+
+      expect(response.status).toBe(200);
+      expect(resBody.data?.username).toBe('test');
+      expect(resBody.data?.name).toBe('test');
+      expect(resBody.data?.token).toBeDefined();
+    });
+  });
 });
