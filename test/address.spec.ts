@@ -268,4 +268,70 @@ describe('AddressController', () => {
       expect(resBody.errors).toBeDefined();
     });
   });
+
+  describe('DELETE /api/contacts/:contactId/addresses/:addressId', () => {
+    beforeEach(async () => {
+      await testService.deleteAddress();
+      await testService.deleteContact();
+      await testService.deleteUser();
+
+      await testService.createUser();
+      await testService.createContact();
+      await testService.createAddress();
+    });
+
+    it('should be rejected if contact is not found', async () => {
+      const contact = await testService.getContact();
+      const address = await testService.getAddress();
+      const response = await request(app.getHttpServer())
+        .delete(
+          `/api/contacts/${(contact as Contact).id + 1}/addresses/${(address as Address).id}`,
+        )
+        .set('Authorization', 'test');
+
+      const resBody = response.body as WebResponse<AddressResponse>;
+
+      logger.info(resBody);
+
+      expect(response.status).toBe(404);
+      expect(resBody.errors).toBeDefined();
+    });
+
+    it('should be rejected if address is not found', async () => {
+      const contact = await testService.getContact();
+      const address = await testService.getAddress();
+      const response = await request(app.getHttpServer())
+        .delete(
+          `/api/contacts/${(contact as Contact).id}/addresses/${(address as Address).id + 1}`,
+        )
+        .set('Authorization', 'test');
+
+      const resBody = response.body as WebResponse<AddressResponse>;
+
+      logger.info(resBody);
+
+      expect(response.status).toBe(404);
+      expect(resBody.errors).toBeDefined();
+    });
+
+    it('should be able to delete address', async () => {
+      const contact = await testService.getContact();
+      const address = await testService.getAddress();
+      const response = await request(app.getHttpServer())
+        .delete(
+          `/api/contacts/${(contact as Contact).id}/addresses/${(address as Address).id}`,
+        )
+        .set('Authorization', 'test');
+
+      const resBody = response.body as WebResponse<boolean>;
+
+      logger.info(resBody);
+
+      expect(response.status).toBe(200);
+      expect(resBody.data).toBe(true);
+
+      const addressResult = await testService.getAddress();
+      expect(addressResult).toBeNull();
+    });
+  });
 });
