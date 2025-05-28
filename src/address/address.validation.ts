@@ -1,4 +1,7 @@
-import { CreateAddressRequest } from 'src/model/address.model';
+import {
+  CreateAddressRequest,
+  GetAddressRequest,
+} from 'src/model/address.model';
 import { z, ZodType } from 'zod';
 
 export class AddressValidation {
@@ -9,5 +12,10 @@ export class AddressValidation {
     province: z.string().min(1).max(100).optional(),
     country: z.string().min(1).max(100),
     postal_code: z.string().min(1).max(10),
+  });
+
+  static readonly GET: ZodType<GetAddressRequest> = z.object({
+    contact_id: z.number().min(1).positive(),
+    address_id: z.number().min(1).positive(),
   });
 }

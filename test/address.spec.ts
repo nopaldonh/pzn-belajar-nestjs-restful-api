@@ -7,7 +7,7 @@ import { Logger } from 'winston';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { TestService } from './test.service';
 import { TestModule } from './test.module';
-import { Contact } from 'generated/prisma';
+import { Address, Contact } from 'generated/prisma';
 import { WebResponse } from 'src/model/web.model';
 import { AddressResponse } from 'src/model/address.model';
 
@@ -75,6 +75,76 @@ describe('AddressController', () => {
       const resBody = response.body as WebResponse<AddressResponse>;
 
       logger.info(resBody);
+
+      expect(response.status).toBe(200);
+      expect(resBody.data?.id).toBeDefined();
+      expect(resBody.data?.street).toBe('jalan test');
+      expect(resBody.data?.city).toBe('kota test');
+      expect(resBody.data?.province).toBe('provinsi test');
+      expect(resBody.data?.country).toBe('negara test');
+      expect(resBody.data?.postal_code).toBe('1111');
+    });
+  });
+
+  describe('GET /api/contacts/:contactId/addresses/:addressId', () => {
+    beforeEach(async () => {
+      await testService.deleteAddress();
+      await testService.deleteContact();
+      await testService.deleteUser();
+
+      await testService.createUser();
+      await testService.createContact();
+      await testService.createAddress();
+    });
+
+    it('should be rejected if contact is not found', async () => {
+      const contact = await testService.getContact();
+      const address = await testService.getAddress();
+      const response = await request(app.getHttpServer())
+        .get(
+          `/api/contacts/${(contact as Contact).id + 1}/addresses/${(address as Address).id}`,
+        )
+        .set('Authorization', 'test');
+
+      const resBody = response.body as WebResponse<AddressResponse>;
+
+      logger.info(resBody);
+
+      expect(response.status).toBe(404);
+      expect(resBody.errors).toBeDefined();
+    });
+
+    it('should be rejected if address is not found', async () => {
+      const contact = await testService.getContact();
+      const address = await testService.getAddress();
+      const response = await request(app.getHttpServer())
+        .get(
+          `/api/contacts/${(contact as Contact).id}/addresses/${(address as Address).id + 1}`,
+        )
+        .set('Authorization', 'test');
+
+      const resBody = response.body as WebResponse<AddressResponse>;
+
+      logger.info(resBody);
+
+      expect(response.status).toBe(404);
+      expect(resBody.errors).toBeDefined();
+    });
+
+    it('should be able to get address', async () => {
+      const contact = await testService.getContact();
+      logger.info('🚀🚀🚀 contact:', contact);
+      const address = await testService.getAddress();
+      logger.info('🚀🚀🚀 address:', address);
+      const response = await request(app.getHttpServer())
+        .get(
+          `/api/contacts/${(contact as Contact).id}/addresses/${(address as Address).id}`,
+        )
+        .set('Authorization', 'test');
+
+      const resBody = response.body as WebResponse<AddressResponse>;
+
+      logger.info('🚀🚀🚀 resBody:', resBody);
 
       expect(response.status).toBe(200);
       expect(resBody.data?.id).toBeDefined();
