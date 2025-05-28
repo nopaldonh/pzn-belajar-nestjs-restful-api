@@ -9,6 +9,7 @@ import { TestService } from './test.service';
 import { TestModule } from './test.module';
 import { ContactResponse } from 'src/model/contact.model';
 import { WebResponse } from 'src/model/web.model';
+import { Contact } from 'generated/prisma';
 
 describe('ContactController', () => {
   let app: INestApplication<App>;
@@ -63,6 +64,48 @@ describe('ContactController', () => {
           email: 'test@example.com',
           phone: '9999',
         });
+
+      const resBody = response.body as WebResponse<ContactResponse>;
+
+      logger.info(resBody);
+
+      expect(response.status).toBe(200);
+      expect(resBody.data?.id).toBeDefined();
+      expect(resBody.data?.first_name).toBe('test');
+      expect(resBody.data?.last_name).toBe('test');
+      expect(resBody.data?.email).toBe('test@example.com');
+      expect(resBody.data?.phone).toBe('9999');
+    });
+  });
+
+  describe('GET /api/contacts/:contactId', () => {
+    beforeEach(async () => {
+      await testService.deleteContact();
+      await testService.deleteUser();
+
+      await testService.createUser();
+      await testService.createContact();
+    });
+
+    it('should be rejected if contact is not found', async () => {
+      const contact = await testService.getContact();
+      const response = await request(app.getHttpServer())
+        .get(`/api/contacts/${(contact as Contact).id + 1}`)
+        .set('Authorization', 'test');
+
+      const resBody = response.body as WebResponse<ContactResponse>;
+
+      logger.info(resBody);
+
+      expect(response.status).toBe(404);
+      expect(resBody.errors).toBeDefined();
+    });
+
+    it('should be able to get contact', async () => {
+      const contact = await testService.getContact();
+      const response = await request(app.getHttpServer())
+        .get(`/api/contacts/${(contact as Contact).id}`)
+        .set('Authorization', 'test');
 
       const resBody = response.body as WebResponse<ContactResponse>;
 
