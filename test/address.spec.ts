@@ -155,4 +155,117 @@ describe('AddressController', () => {
       expect(resBody.data?.postal_code).toBe('1111');
     });
   });
+
+  describe('PUT /api/contacts/:contactId/addresses/:addressId', () => {
+    beforeEach(async () => {
+      await testService.deleteAddress();
+      await testService.deleteContact();
+      await testService.deleteUser();
+
+      await testService.createUser();
+      await testService.createContact();
+      await testService.createAddress();
+    });
+
+    it('should be rejected if request is invalid', async () => {
+      const contact = await testService.getContact();
+      const address = await testService.getAddress();
+      const response = await request(app.getHttpServer())
+        .put(
+          `/api/contacts/${(contact as Contact).id}/addresses/${(address as Address).id}`,
+        )
+        .set('Authorization', 'test')
+        .send({
+          street: '',
+          city: '',
+          province: '',
+          country: '',
+          postal_code: '',
+        });
+
+      const resBody = response.body as WebResponse<AddressResponse>;
+
+      logger.info(resBody);
+
+      expect(response.status).toBe(400);
+      expect(resBody.errors).toBeDefined();
+    });
+
+    it('should be able to update address', async () => {
+      const contact = await testService.getContact();
+      const address = await testService.getAddress();
+      const response = await request(app.getHttpServer())
+        .put(
+          `/api/contacts/${(contact as Contact).id}/addresses/${(address as Address).id}`,
+        )
+        .set('Authorization', 'test')
+        .send({
+          street: 'jalan test',
+          city: 'kota test',
+          province: 'provinsi test',
+          country: 'negara test',
+          postal_code: '1111',
+        });
+
+      const resBody = response.body as WebResponse<AddressResponse>;
+
+      logger.info(resBody);
+
+      expect(response.status).toBe(200);
+      expect(resBody.data?.id).toBeDefined();
+      expect(resBody.data?.street).toBe('jalan test');
+      expect(resBody.data?.city).toBe('kota test');
+      expect(resBody.data?.province).toBe('provinsi test');
+      expect(resBody.data?.country).toBe('negara test');
+      expect(resBody.data?.postal_code).toBe('1111');
+    });
+
+    it('should be rejected if contact is not found', async () => {
+      const contact = await testService.getContact();
+      const address = await testService.getAddress();
+      const response = await request(app.getHttpServer())
+        .put(
+          `/api/contacts/${(contact as Contact).id + 1}/addresses/${(address as Address).id}`,
+        )
+        .set('Authorization', 'test')
+        .send({
+          street: 'jalan test',
+          city: 'kota test',
+          province: 'provinsi test',
+          country: 'negara test',
+          postal_code: '1111',
+        });
+
+      const resBody = response.body as WebResponse<AddressResponse>;
+
+      logger.info(resBody);
+
+      expect(response.status).toBe(404);
+      expect(resBody.errors).toBeDefined();
+    });
+
+    it('should be rejected if address is not found', async () => {
+      const contact = await testService.getContact();
+      const address = await testService.getAddress();
+      const response = await request(app.getHttpServer())
+        .put(
+          `/api/contacts/${(contact as Contact).id}/addresses/${(address as Address).id + 1}`,
+        )
+        .set('Authorization', 'test')
+        .send({
+          street: 'jalan test',
+          city: 'kota test',
+          province: 'provinsi test',
+          country: 'negara test',
+          postal_code: '1111',
+        });
+
+      const resBody = response.body as WebResponse<AddressResponse>;
+
+      logger.info(resBody);
+
+      expect(response.status).toBe(404);
+      expect(resBody.errors).toBeDefined();
+    });
+  });
 });
